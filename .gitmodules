@@ -1,0 +1,4 @@
+[submodule "thirdparty/lua"]
+	path = thirdparty/lua
+	url = https://github.com/lua/lua.git
+	branch = master

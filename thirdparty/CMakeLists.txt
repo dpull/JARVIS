@@ -1,0 +1,19 @@
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+
+# lua 
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	add_definitions(-DLUA_USE_LINUX)
+ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux") 
+
+set(LUA_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lua")
+set(LUA_SRC_IGNORE "${LUA_SRC_PATH}/lua.c;${LUA_SRC_PATH}/luac.c;${LUA_SRC_PATH}/onelua.c")
+aux_source_directory(${LUA_SRC_PATH} LUA_SRC)
+list(REMOVE_ITEM LUA_SRC ${LUA_SRC_IGNORE})
+
+add_library(lua STATIC ${LUA_SRC})
+set_property(TARGET lua PROPERTY FOLDER "thirdparty")
+set(LUA_INCLUDE_DIRS ${LUA_SRC_PATH} PARENT_SCOPE)
+
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	target_link_libraries(lua dl)
+ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux") 
