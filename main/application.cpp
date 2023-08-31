@@ -178,10 +178,8 @@ bool application::call_lua_function(const char* file, const char* function, int 
 int application::run()
 {
     while (!_exit_flag) {
-        _mutex.lock();
-        call_lua_function("script/main.lua", "tick", 0, 0);
-        _mutex.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        tick();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
     return 0;
 }
@@ -206,6 +204,11 @@ bool application::exec(const char* file)
     }
 
     return true;
+}
+
+void application::tick() { 
+    std::lock_guard<decltype(_mutex)> lock(_mutex);
+    call_lua_function("script/main.lua", "tick", 0, 0);
 }
 
 bool application::lua_create()

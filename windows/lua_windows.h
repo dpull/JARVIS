@@ -3,4 +3,4 @@
 #include "lua.h"
 #include "lualib.h"
 
-int luaopen_system(lua_State* L);
+int luaopen_windows(lua_State* L);

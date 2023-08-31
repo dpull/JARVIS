@@ -11,9 +11,9 @@ file(GLOB_RECURSE SOURCE_FILES
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${LUA_INCLUDE_DIRS})
 
-add_executable(${APP_NAME} ${SOURCE_FILES})
+add_executable(${APP_NAME} ${SOURCE_FILES} ${LUA_SOURCE_FILES})
 target_link_libraries(${APP_NAME} ${PHSYXSDK_LIBRARIES})
-target_link_libraries(${APP_NAME} lua system)
+target_link_libraries(${APP_NAME} lua windows)
 
 if(APPLE)
     target_link_libraries(${APP_NAME} "-framework CoreFoundation")

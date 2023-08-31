@@ -1,4 +1,4 @@
-﻿#include "application.h"
+﻿#include "application_windows.h"
 #include <memory>
 #include <stdio.h>
 
@@ -7,7 +7,7 @@ static bool SetConsoleInfo();
 
 int main(int argc, char** argv)
 {
-    g_application.reset(new application());
+    g_application.reset(new application_windows());
     if (!g_application->init(argc, argv)) {
         printf("application init  failed.");
         return 1;

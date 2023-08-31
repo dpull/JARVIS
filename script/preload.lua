@@ -39,6 +39,12 @@ function _G.import(filename)
     return node.env;
 end
 
+function _G.reload_all()
+    for _, node in pairs(_G.__IMPORT_FILES) do
+        pcall(try_load, node)
+    end
+end
+
 local local_import = _G.import
 local function xpcall_ret(ok, ...)
     assert(ok, (...))

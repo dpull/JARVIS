@@ -15,7 +15,7 @@ endif()
 add_subdirectory(thirdparty)
 
 add_subdirectory(main)
-add_subdirectory(system)
+add_subdirectory(windows)
 
 message(STATUS *******************************************************)
 message(STATUS CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
