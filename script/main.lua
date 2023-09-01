@@ -1,11 +1,14 @@
+local emulator = import("script/emulator.lua")
+     
 auto_cmd = auto_cmd or "a"
 disable = disable or false
 
 function init(arg1, ...)
-    import("script/emulator.lua")
+    emulator.init()
 end
 
 function tick()
+    emulator.frame = emulator.frame + 1
     if disable then
         return
     end
@@ -39,4 +42,7 @@ end
 function change_enable()
     disable = not disable
     print("disable:", disable)
+    if disable then
+        emulator.stop_hack()
+    end
 end

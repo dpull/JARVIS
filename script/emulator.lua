@@ -1,5 +1,7 @@
 local windows = require "windows"
-local tx_emulator_pid = 239916
+
+frame = frame or 0
+last_manually = last_manually or 0
 
 local function get_tx_emulator_wnd(pid)
     local wnds = {windows.find_window(pid)}
@@ -12,43 +14,43 @@ local function get_tx_emulator_wnd(pid)
 end
 
 local function get_tx_emulator()
-    if tx_emulator_pid then
-        return get_tx_emulator_wnd(tx_emulator_pid)
-    end
-
     local pids = {windows.find_process("AndroidEmulator.exe")}
     for _, pid in ipairs(pids) do
         local wnd = get_tx_emulator_wnd(pid)
         if wnd then
+            print("find tx emulator", pid)
             return wnd
         end
     end
 end
 
 function init()
-    if emulator then
-        return
-    end
-
     emulator = get_tx_emulator()
     assert(emulator)
     windows.set_foreground_window(emulator)    
 end
 
 function press_keyboard(vk)
-    -- #define WM_KEYDOWN                      0x0100
-    -- #define WM_KEYUP                        0x0101
-    -- windows.send_message(emulator, 0x0100, vk, 0)
-    windows.send_input({type = 1, vk=vk, scan=0, flags=0}, {type = 1, vk=vk, scan=0, flags=2})
+    windows.send_input({type = 1, vk=vk, flags=0}, {type = 1, vk=vk, flags=2})
 end
 
 local function is_manually()
-    local ret = {windows.get_async_key_state(string.byte("JHWASD", 1, -1))}
+    local ret = {windows.get_async_key_state(string.byte(" WASDHUIK", 1, -1))}
     for i, v in pairs(ret) do
         if v then
+            print("is_manually", i)
             return true
         end
     end
+end
+
+function stop_hack()
+    if windows.get_foreground_window() ~= emulator then
+        return
+    end
+    windows.show_window(emulator, 0)
+    windows.show_window(emulator, 5)
+    windows.set_foreground_window(emulator)    
 end
 
 function get_click_pos()
@@ -58,7 +60,7 @@ function get_click_pos()
         return
     end
     local x, y = windows.get_cursor_pos()
-    local top, left = windows.get_window_rect(emulator)
+    local left, top = windows.get_window_rect(emulator)
     return x - left, y - top
 end
 
@@ -75,21 +77,20 @@ function click_mouse(x, y)
         return
     end
 
-    local now = os.time()
     if is_manually() then
-        last_manually = now
+        if last_manually < frame then
+            stop_hack()
+        end
+        last_manually = frame + 10
         return
     end
-    if last_manually == now then
+    if last_manually >= frame then
         return
     end
-
     return true
  end
 
 function attack()
-    press_keyboard(string.byte("J"))
     print("attack")
+    press_keyboard(string.byte("J"))
 end
-
-init()

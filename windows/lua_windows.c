@@ -3,6 +3,7 @@
 #include <psapi.h>
 #include <shlwapi.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #pragma comment(lib, "Shlwapi.lib")
 
@@ -23,16 +24,13 @@ static int lua_find_process(lua_State* L)
         if (!process)
             continue;
 
-        HMODULE mod;
-        if (EnumProcessModules(process, &mod, sizeof(mod), &needed)) {
-            if (GetModuleBaseNameA(process, mod, mod_name, sizeof(mod_name))) {
-                printf("%s\n", mod_name);
-                if (StrStrIA(mod_name, path)) {
-                    lua_pushinteger(L, pids[i]);
-                    result++;
-                }
+        if (GetModuleFileNameExA(process, NULL, mod_name, sizeof(mod_name)) > 0) { 
+            if (StrStrIA(mod_name, path)) {
+                lua_pushinteger(L, pids[i]);
+                result++;
             }
         }
+
         CloseHandle(process);
     }
     return result;
@@ -131,7 +129,6 @@ static bool lua_toinput(lua_State* L, int idx, INPUT* input)
             if (lua_getfield(L, idx, "y") != LUA_TNUMBER)
                 break;
             input->mi.dy = (LONG)lua_tointeger(L, -1);
-
             if (lua_getfield(L, idx, "flags") != LUA_TNUMBER)
                 break;
             input->mi.dwFlags = (DWORD)lua_tointeger(L, -1);
@@ -139,11 +136,6 @@ static bool lua_toinput(lua_State* L, int idx, INPUT* input)
             if (lua_getfield(L, idx, "vk") != LUA_TNUMBER)
                 break;
             input->ki.wVk = (WORD)lua_tointeger(L, -1);
-
-            if (lua_getfield(L, idx, "scan") != LUA_TNUMBER)
-                break;
-            input->ki.wScan = (WORD)lua_tointeger(L, -1);
-
             if (lua_getfield(L, idx, "flags") != LUA_TNUMBER)
                 break;
             input->mi.dwFlags = (DWORD)lua_tointeger(L, -1);
@@ -225,18 +217,17 @@ static int lua_get_async_key_state(lua_State* L)
     return top;
 }
 
-static int lua_send_message(lua_State* L)
+static int lua_show_window(lua_State* L)
 {
     HWND hwnd = lua_touserdata(L, 1);
     if (!hwnd)
         return 0;
-    UINT msg = (UINT)lua_tointeger(L, 2);
-    WPARAM wparam = (WPARAM)lua_tointeger(L, 3);
-    LPARAM lparam = (LPARAM)lua_tointeger(L, 4);
-    LRESULT ret = SendMessageA(hwnd, msg, wparam, lparam);
-    lua_pushnumber(L, ret);
+    int cmd = (int)lua_tointeger(L, 2);
+    BOOL ret = ShowWindow(hwnd, cmd);
+    lua_pushboolean(L, ret);
     return 1;
 }
+
 
 int luaopen_windows(lua_State* L)
 {
@@ -252,7 +243,7 @@ int luaopen_windows(lua_State* L)
         { "get_cursor_pos", lua_get_cursor_pos },
         { "set_cursor_pos", lua_set_cursor_pos },
         { "get_async_key_state", lua_get_async_key_state },
-        { "send_message", lua_send_message },
+        { "show_window", lua_show_window },
         { NULL, NULL },
     };
     luaL_newlib(L, l);
