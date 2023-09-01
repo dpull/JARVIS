@@ -36,7 +36,10 @@ function init()
 end
 
 function press_keyboard(vk)
-   windows.send_input({type = 1, vk=vk, scan=0, flags=0}, {type = 1, vk=vk, scan=0, flags=2})
+    -- #define WM_KEYDOWN                      0x0100
+    -- #define WM_KEYUP                        0x0101
+    -- windows.send_message(emulator, 0x0100, vk, 0)
+    windows.send_input({type = 1, vk=vk, scan=0, flags=0}, {type = 1, vk=vk, scan=0, flags=2})
 end
 
 local function is_manually()
@@ -85,11 +88,8 @@ function click_mouse(x, y)
  end
 
 function attack()
-    -- local x, y = get_click_pos()
-    -- if x then
-    --     print(string.format("{%s, %s},", x, y))
-    -- end
     press_keyboard(string.byte("J"))
+    print("attack")
 end
 
 init()

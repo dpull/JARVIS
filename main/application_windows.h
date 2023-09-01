@@ -9,7 +9,5 @@ public:
 
 private:
     void tick_cmd();
-
-private:
-    bool _disable = false;
+    void change_enable();
 };

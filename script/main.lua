@@ -1,10 +1,14 @@
 auto_cmd = auto_cmd or "a"
+disable = disable or false
 
 function init(arg1, ...)
     import("script/emulator.lua")
 end
 
 function tick()
+    if disable then
+        return
+    end
     exec(auto_cmd)
 end
 
@@ -24,9 +28,15 @@ function exec(cmd)
         return
     end
 
-    if cmd ~= "r" then
+    if cmd ~= auto_cmd and cmd ~= "r" then
         auto_cmd = cmd 
+        print("auto_cmd:", cmd_path)
     end
     local cmd_lib = import(cmd_path)
     cmd_lib.exec()
+end
+
+function change_enable()
+    disable = not disable
+    print("disable:", disable)
 end

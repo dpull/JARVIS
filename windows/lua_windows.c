@@ -225,6 +225,19 @@ static int lua_get_async_key_state(lua_State* L)
     return top;
 }
 
+static int lua_send_message(lua_State* L)
+{
+    HWND hwnd = lua_touserdata(L, 1);
+    if (!hwnd)
+        return 0;
+    UINT msg = (UINT)lua_tointeger(L, 2);
+    WPARAM wparam = (WPARAM)lua_tointeger(L, 3);
+    LPARAM lparam = (LPARAM)lua_tointeger(L, 4);
+    LRESULT ret = SendMessageA(hwnd, msg, wparam, lparam);
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
 int luaopen_windows(lua_State* L)
 {
     luaL_checkversion(L);
@@ -239,6 +252,7 @@ int luaopen_windows(lua_State* L)
         { "get_cursor_pos", lua_get_cursor_pos },
         { "set_cursor_pos", lua_set_cursor_pos },
         { "get_async_key_state", lua_get_async_key_state },
+        { "send_message", lua_send_message },
         { NULL, NULL },
     };
     luaL_newlib(L, l);

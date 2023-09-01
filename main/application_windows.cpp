@@ -12,7 +12,7 @@ bool application_windows::init(int argc, char** argv) {
     if (!RegisterHotKey(NULL, (int)event_id::hotKey_enable, MOD_CONTROL, VK_F12))
         return false;
 
-    if (!SetTimer(NULL, (int)event_id::tick_timer, 50, NULL))
+    if (!SetTimer(NULL, (int)event_id::tick_timer, 100, NULL))
         return false;
 
     return application::init(argc, argv);
@@ -28,11 +28,10 @@ int application_windows::run()
         switch (msg.message) {
         case WM_TIMER:
             tick_cmd();
-            if (!_disable)
-                tick();
+            tick();
             break;
         case WM_HOTKEY:
-            _disable = !_disable;
+            change_enable();
             break;
         default:
             printf("application_windows unknown message:%d\n", msg.message);
@@ -51,4 +50,9 @@ void application_windows::tick_cmd()
     std::lock_guard<decltype(_mutex)> lock(_mutex);
     lua_pushstring(_L, cmd);
     call_lua_function("script/main.lua", "exec", 1, 0);
+}
+
+void application_windows::change_enable() {
+    std::lock_guard<decltype(_mutex)> lock(_mutex);
+    call_lua_function("script/main.lua", "change_enable", 0, 0);
 }
