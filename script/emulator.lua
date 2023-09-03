@@ -1,12 +1,14 @@
 local windows = require "windows"
 
 frame = frame or 0
+last_state = last_state or ""
 last_manually = last_manually or 0
 
 local function get_tx_emulator_wnd(pid)
     local wnds = {windows.find_window(pid)}
     for _, wnd in ipairs(wnds) do
         local title = windows.get_window_text(wnd)
+        print(title)
         if string.find(title, "腾讯手游助手") then
             return wnd
         end
@@ -14,7 +16,7 @@ local function get_tx_emulator_wnd(pid)
 end
 
 local function get_tx_emulator()
-    local pids = {windows.find_process("AndroidEmulator.exe")}
+    local pids = {windows.find_process("AndroidEmulator")}
     for _, pid in ipairs(pids) do
         local wnd = get_tx_emulator_wnd(pid)
         if wnd then
@@ -31,7 +33,10 @@ function init()
 end
 
 function press_keyboard(vk)
-    windows.send_input({type = 1, vk=vk, flags=0}, {type = 1, vk=vk, flags=2})
+    -- #define WM_KEYDOWN                      0x0100
+    -- #define WM_KEYUP                        0x0101
+    windows.send_message(emulator, 0x0100, vk, 0)
+    -- windows.send_input({type = 1, vk=vk, flags=0}, {type = 1, vk=vk, flags=2})
 end
 
 local function is_manually()
@@ -91,6 +96,14 @@ function click_mouse(x, y)
  end
 
 function attack()
-    print("attack")
     press_keyboard(string.byte("J"))
+end
+
+function set_title(cmd)
+    local title = string.format("[%d]%s.%s", frame, cmd, last_state)
+    windows.set_console_title(title)
+end
+
+function set_state(stat)
+    last_state = stat
 end

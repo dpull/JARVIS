@@ -37,6 +37,8 @@ function exec(cmd)
     end
     local cmd_lib = import(cmd_path)
     cmd_lib.exec()
+
+    emulator.set_title(cmd)
 end
 
 function change_enable()

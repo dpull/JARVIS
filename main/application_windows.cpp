@@ -15,6 +15,9 @@ bool application_windows::init(int argc, char** argv) {
     if (!SetTimer(NULL, (int)event_id::tick_timer, 100, NULL))
         return false;
 
+    auto console = GetConsoleWindow();
+    SetWindowPos(console, 0, 1, 100, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
     return application::init(argc, argv);
 }
 

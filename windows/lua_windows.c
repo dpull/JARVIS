@@ -67,13 +67,20 @@ static int lua_find_window(lua_State* L)
 
 static void lua_pushlwstring(lua_State* L, wchar_t* wstr, int len)
 {
-    char utf8str[4096];
-    int cnt = WideCharToMultiByte(CP_UTF8, 0, wstr, len, utf8str, sizeof(utf8str), NULL, NULL);
+    int size = WideCharToMultiByte(CP_UTF8, 0, wstr, len, NULL, 0, NULL, FALSE);
+    if (size == 0) { 
+        lua_pushstring(L, "");
+        return;
+    }
+
+    char* utf8str = (char*)malloc(size);
+    int cnt = WideCharToMultiByte(CP_UTF8, 0, wstr, len, utf8str, size, NULL, NULL);
     if (cnt > 0) {
         lua_pushlstring(L, utf8str, cnt);
     } else {
         lua_pushstring(L, "");
     }
+    free(utf8str);
 }
 
 static int lua_get_window_text(lua_State* L)
@@ -86,7 +93,7 @@ static int lua_get_window_text(lua_State* L)
     wchar_t* str = (wchar_t*)malloc(len * sizeof(wchar_t));
     if (!str)
         return 0;
-
+                    
     int cnt = GetWindowTextW(hwnd, str, len);
     lua_pushlwstring(L, str, cnt);
     free(str);
@@ -228,6 +235,27 @@ static int lua_show_window(lua_State* L)
     return 1;
 }
 
+static int lua_set_console_title(lua_State* L)
+{
+    const char* title = lua_tostring(L, 1);
+    if (!title)
+        return 0;
+    BOOL ret = SetConsoleTitleA(title);
+    lua_pushboolean(L, ret);
+    return 1;
+}
+
+static int lua_send_message(lua_State* L)
+{
+    HWND hwnd = lua_touserdata(L, 1);
+    if (!hwnd)
+        return 0;
+    UINT msg = (UINT)lua_tointeger(L, 2);
+    WPARAM wparam = (WPARAM)lua_tointeger(L, 3);
+    LPARAM lparam = (LPARAM)lua_tointeger(L, 4);
+    SendMessageA(hwnd, msg, wparam, lparam);
+    return 0;
+}
 
 int luaopen_windows(lua_State* L)
 {
@@ -244,6 +272,8 @@ int luaopen_windows(lua_State* L)
         { "set_cursor_pos", lua_set_cursor_pos },
         { "get_async_key_state", lua_get_async_key_state },
         { "show_window", lua_show_window },
+        { "set_console_title", lua_set_console_title },
+        { "send_message", lua_send_message },
         { NULL, NULL },
     };
     luaL_newlib(L, l);
