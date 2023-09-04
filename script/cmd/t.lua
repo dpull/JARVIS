@@ -1,18 +1,10 @@
 local emulator = import("script/emulator.lua")
 
 local next_step = {
-    {1612, 597,},
-    {1083, 900,},
-    {1848, 728,},
-    {1583, 608,},
+    {1581, 984,},
 }
 
 local accept = {
-    {1140, 732},
-    {1087, 442},
-    {968, 454},
-    {924, 554},
-    {1071, 580},
 }
 
 frame = frame or 0
@@ -40,6 +32,12 @@ local function do_accept_step()
 end
 
 function exec()
+    if not emulator.enable() then
+        emulator.set_state("disable")
+        return
+    end
+    emulator.set_state("click")
+
     frame = frame + 1
 
     if not emulator.enable() then
@@ -51,6 +49,6 @@ function exec()
     end 
 
     if frame % 5 == 0 then
-        do_accept_step()
+       -- do_accept_step()
     end 
 end

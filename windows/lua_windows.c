@@ -24,7 +24,7 @@ static int lua_find_process(lua_State* L)
         if (!process)
             continue;
 
-        if (GetModuleFileNameExA(process, NULL, mod_name, sizeof(mod_name)) > 0) { 
+        if (GetModuleFileNameExA(process, NULL, mod_name, sizeof(mod_name)) > 0) {
             if (StrStrIA(mod_name, path)) {
                 lua_pushinteger(L, pids[i]);
                 result++;
@@ -65,10 +65,31 @@ static int lua_find_window(lua_State* L)
     return param.count;
 }
 
+BOOL CALLBACK enum_child_proc(HWND hwnd, LPARAM lparam)
+{
+    struct enum_wnd_param* param = (struct enum_wnd_param*)lparam;
+    lua_pushlightuserdata(param->L, hwnd);
+    param->count++;
+    return TRUE;
+}
+
+static int lua_get_child_window(lua_State* L)
+{
+    HWND hwnd = lua_touserdata(L, 1);
+    if (!hwnd)
+        return 0;
+
+    struct enum_wnd_param param = { 0 };
+    param.L = L;
+
+    EnumChildWindows(hwnd, enum_child_proc, (LPARAM)&param);
+    return param.count;
+}
+
 static void lua_pushlwstring(lua_State* L, wchar_t* wstr, int len)
 {
     int size = WideCharToMultiByte(CP_UTF8, 0, wstr, len, NULL, 0, NULL, FALSE);
-    if (size == 0) { 
+    if (size == 0) {
         lua_pushstring(L, "");
         return;
     }
@@ -93,7 +114,7 @@ static int lua_get_window_text(lua_State* L)
     wchar_t* str = (wchar_t*)malloc(len * sizeof(wchar_t));
     if (!str)
         return 0;
-                    
+
     int cnt = GetWindowTextW(hwnd, str, len);
     lua_pushlwstring(L, str, cnt);
     free(str);
@@ -245,7 +266,7 @@ static int lua_set_console_title(lua_State* L)
     return 1;
 }
 
-static int lua_send_message(lua_State* L)
+static int lua_post_message(lua_State* L)
 {
     HWND hwnd = lua_touserdata(L, 1);
     if (!hwnd)
@@ -253,8 +274,22 @@ static int lua_send_message(lua_State* L)
     UINT msg = (UINT)lua_tointeger(L, 2);
     WPARAM wparam = (WPARAM)lua_tointeger(L, 3);
     LPARAM lparam = (LPARAM)lua_tointeger(L, 4);
-    SendMessageA(hwnd, msg, wparam, lparam);
+    PostMessageA(hwnd, msg, wparam, lparam);
     return 0;
+}
+
+static int lua_kb_code(lua_State* L)
+{
+    size_t sz;
+    const char* s = lua_tolstring(L, 1, &sz);
+    if (sz == 0)
+        return 0;
+
+    SHORT key = VkKeyScanA(s[0]);
+    UINT scan = MapVirtualKeyA(LOBYTE(key), 0);
+    lua_pushinteger(L, key);
+    lua_pushinteger(L, scan);
+    return 2;
 }
 
 int luaopen_windows(lua_State* L)
@@ -263,6 +298,7 @@ int luaopen_windows(lua_State* L)
     luaL_Reg l[] = {
         { "find_process", lua_find_process },
         { "find_window", lua_find_window },
+        { "get_child_window", lua_get_child_window },
         { "get_window_text", lua_get_window_text },
         { "set_foreground_window", lua_set_foreground_window },
         { "get_foreground_window", lua_get_foreground_window },
@@ -273,7 +309,8 @@ int luaopen_windows(lua_State* L)
         { "get_async_key_state", lua_get_async_key_state },
         { "show_window", lua_show_window },
         { "set_console_title", lua_set_console_title },
-        { "send_message", lua_send_message },
+        { "post_message", lua_post_message },
+        { "kb_code", lua_kb_code },
         { NULL, NULL },
     };
     luaL_newlib(L, l);

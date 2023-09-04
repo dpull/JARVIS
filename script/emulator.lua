@@ -8,9 +8,15 @@ local function get_tx_emulator_wnd(pid)
     local wnds = {windows.find_window(pid)}
     for _, wnd in ipairs(wnds) do
         local title = windows.get_window_text(wnd)
-        print(title)
         if string.find(title, "腾讯手游助手") then
-            return wnd
+            local child = { windows.get_child_window(wnd)}
+            for _, subwnd in pairs(child) do
+                title = windows.get_window_text(subwnd)
+                if string.find(title, "EngineRenderWindow") then
+                    return wnd, subwnd
+                end
+            end
+            return nil
         end
     end    
 end
@@ -18,44 +24,51 @@ end
 local function get_tx_emulator()
     local pids = {windows.find_process("AndroidEmulator")}
     for _, pid in ipairs(pids) do
-        local wnd = get_tx_emulator_wnd(pid)
+        local wnd, subwnd = get_tx_emulator_wnd(pid)
         if wnd then
             print("find tx emulator", pid)
-            return wnd
+            return wnd, subwnd
         end
     end
 end
 
 function init()
-    emulator = get_tx_emulator()
+    emulator, emulator_msg_proc = get_tx_emulator()
     assert(emulator)
     windows.set_foreground_window(emulator)    
 end
 
-function press_keyboard(vk)
-    -- #define WM_KEYDOWN                      0x0100
-    -- #define WM_KEYUP                        0x0101
-    windows.send_message(emulator, 0x0100, vk, 0)
-    -- windows.send_input({type = 1, vk=vk, flags=0}, {type = 1, vk=vk, flags=2})
+function on_frame_begin()
+    frame = frame + 1
+    cur_frame_input = next_frame_input or {}
+    next_frame_input = {}
+    cur_frame_unique = {}
 end
 
-local function is_manually()
-    local ret = {windows.get_async_key_state(string.byte(" WASDHUIK", 1, -1))}
-    for i, v in pairs(ret) do
-        if v then
-            print("is_manually", i)
-            return true
-        end
+function on_frame_end()
+    for _, msg in ipairs(cur_frame_input) do
+        windows.post_message(emulator_msg_proc, table.unpack(msg))
     end
 end
 
-function stop_hack()
-    if windows.get_foreground_window() ~= emulator then
+function press_keyboard(key)
+    if cur_frame_unique[key] then
         return
     end
-    windows.show_window(emulator, 0)
-    windows.show_window(emulator, 5)
-    windows.set_foreground_window(emulator)    
+    cur_frame_unique[key] = true
+
+    local k, scan = windows.kb_code(key)
+    if not k then
+        return
+    end
+
+    -- #define WM_KEYDOWN                      0x0100
+    -- #define WM_KEYUP                        0x0101
+    local lparam = 0x1 | (scan << 16) 
+    table.insert(cur_frame_input, {0x0100, k, lparam})
+
+    lparam = lparam | (0x1 << 30)  | (0x1 << 31) 
+    table.insert(next_frame_input, {0x0101, k, lparam})
 end
 
 function get_click_pos()
@@ -70,22 +83,30 @@ function get_click_pos()
 end
 
 function click_mouse(x, y)
-    local top, left = windows.get_window_rect(emulator)
-    windows.set_cursor_pos(left+x, top+y)
+    local left, top = windows.get_window_rect(emulator)
+    windows.set_cursor_pos(x + left, y + top)
+
     -- #define MOUSEEVENTF_LEFTDOWN    0x0002
     -- #define MOUSEEVENTF_LEFTUP      0x0004 
-    windows.send_input({type = 0, x=0, y=0, flags=2}, {type = 0, x=0, y=0, flags=4})
- end
+    windows.send_input({type = 0, x=0, y=0, flags=0x0002}, {type = 0, x=0, y=0, flags=0x0004})
+end
 
- function enable()
+local function is_manually()
+    local ret = {windows.get_async_key_state(string.byte("J WASDHUIK", 1, -1))}
+    for i, v in pairs(ret) do
+        if v then
+            print("is_manually", i)
+            return true
+        end
+    end
+end
+
+function enable()
     if windows.get_foreground_window() ~= emulator then
         return
     end
 
     if is_manually() then
-        if last_manually < frame then
-            stop_hack()
-        end
         last_manually = frame + 10
         return
     end
@@ -96,7 +117,7 @@ function click_mouse(x, y)
  end
 
 function attack()
-    press_keyboard(string.byte("J"))
+    press_keyboard('j')
 end
 
 function set_title(cmd)
