@@ -17,11 +17,3 @@ set(LUA_INCLUDE_DIRS ${LUA_SRC_PATH} PARENT_SCOPE)
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	target_link_libraries(lua dl)
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux") 
-
-# opencv
-set(BUILD_SHARED_LIBS OFF)
-set(BUILD_opencv_apps OFF)
-set(BUILD_DOCS OFF)
-set(BUILD_PERF_TESTS OFF)
-set(BUILD_TESTS OFF)
-add_subdirectory(opencv)

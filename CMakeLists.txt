@@ -12,10 +12,21 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
 	add_definitions(-DDEBUG)
 endif()
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+
 add_subdirectory(thirdparty)
+
+# opencv
+set(OpenCV_STATIC ON)
+set(OpenCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build_opencv/install/")
+find_package(OpenCV REQUIRED)
 
 add_subdirectory(main)
 add_subdirectory(windows)
+add_subdirectory(opencv)
 
 message(STATUS *******************************************************)
 message(STATUS CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
@@ -37,4 +48,6 @@ message(STATUS CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR})
 message(STATUS CMAKE_CACHEFILE_DIR=${CMAKE_CACHEFILE_DIR})
 message(STATUS -------------------------------------------------------)
 message(STATUS LUA_INCLUDE_DIRS=${LUA_INCLUDE_DIRS})
+message(STATUS OpenCV_INCLUDE_DIRS=${OpenCV_INCLUDE_DIRS})
+message(STATUS OpenCV_LIB_PATH=${OpenCV_LIB_PATH})
 message(STATUS *******************************************************)

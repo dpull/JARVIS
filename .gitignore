@@ -53,3 +53,4 @@ dkms.conf
 
 # Custom
 build/
+build_opencv/
