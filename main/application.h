@@ -5,7 +5,7 @@
 class application {
 public:
     application();
-    virtual  ~application();
+    virtual ~application();
 
     virtual bool init(int argc, char** argv);
     virtual int run();

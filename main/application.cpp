@@ -206,7 +206,8 @@ bool application::exec(const char* file)
     return true;
 }
 
-void application::tick() { 
+void application::tick()
+{
     std::lock_guard<decltype(_mutex)> lock(_mutex);
     call_lua_function("script/main.lua", "tick", 0, 0);
 }

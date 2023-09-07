@@ -1,14 +1,15 @@
 ﻿#include "application_windows.h"
 #include "lua_plugin.h"
-#include <conio.h>
 #include <Windows.h>
+#include <conio.h>
 
 enum class event_id {
     hotKey_enable = 1,
     tick_timer,
 };
 
-bool application_windows::init(int argc, char** argv) {
+bool application_windows::init(int argc, char** argv)
+{
     if (!RegisterHotKey(NULL, (int)event_id::hotKey_enable, MOD_CONTROL, VK_F12))
         return false;
 
@@ -43,7 +44,7 @@ int application_windows::run()
     return 0;
 }
 
-void application_windows::tick_cmd() 
+void application_windows::tick_cmd()
 {
     if (!_kbhit())
         return;
@@ -51,11 +52,14 @@ void application_windows::tick_cmd()
     cmd[0] = _getch();
 
     std::lock_guard<decltype(_mutex)> lock(_mutex);
+    lua_pushstring(_L, "cmd");
     lua_pushstring(_L, cmd);
-    call_lua_function("script/main.lua", "exec", 1, 0);
+    call_lua_function("script/main.lua", "on_event", 2, 0);
 }
 
-void application_windows::change_enable() {
+void application_windows::change_enable()
+{
     std::lock_guard<decltype(_mutex)> lock(_mutex);
-    call_lua_function("script/main.lua", "change_enable", 0, 0);
+    lua_pushstring(_L, "change_enable");
+    call_lua_function("script/main.lua", "on_event", 1, 0);
 }
