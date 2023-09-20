@@ -6,6 +6,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+static void debug_img(const cv::String& win, const cv::Mat& img, cv::Point& min_loc, cv::Point& max_loc)
+{
+    cv::Mat result_img(img);
+    cv::rectangle(result_img, min_loc, max_loc, cv::Scalar(0, 0, 255), 2);
+
+    cv::Mat resized_img;
+    cv::resize(result_img, resized_img, cv::Size(result_img.cols / 2, result_img.rows / 2));
+
+    
+    cv::namedWindow(win, cv::WINDOW_NORMAL);
+    cv::imshow(win, resized_img);
+    cv::waitKey();
+    cv::destroyWindow(win);
+}
+
 static int lua_load_image(lua_State* L)
 {
     auto path = lua_tostring(L, 1);
@@ -59,16 +74,8 @@ static int lua_match_template(lua_State* L)
         break;
     }
 
-
     if (show) { 
-        cv::Mat result_img(*img);
-        cv::rectangle(result_img, min_loc, max_loc, cv::Scalar(0, 0, 255), 2);
-
-        cv::Mat resized_img;
-        cv::resize(result_img, resized_img, cv::Size(result_img.cols / 2, result_img.rows / 2));
-
-        cv::imshow("match_template", resized_img);
-        cv::waitKey();
+        debug_img("match_template", *img, min_loc, max_loc);
     }
 
     lua_pushnumber(L, ret_val);
