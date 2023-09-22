@@ -74,9 +74,8 @@ static int lua_match_template(lua_State* L)
         ret_val = 0;
     }
 
-    if (show) {
+    if (show)
         debug_img("match_template", *img, min_loc, max_loc);
-    }
 
     lua_pushnumber(L, ret_val);
     lua_pushinteger(L, min_loc.x);
@@ -127,9 +126,8 @@ static int lua_window2image(lua_State* L)
             break;
         }
 
-        if (save_file) {
+        if (save_file)
             cv::imwrite(save_file, *image);
-        }
 
         result = 1;
     } while (false);
