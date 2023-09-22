@@ -9,21 +9,12 @@ function init(arg1, ...)
     --     opencv.window2image(wnd, "F:\\5.bmp")
     -- end
 
-    local img = opencv.load_image("F:\\1.png")
-    local tmpl = {opencv.load_image("F:\\2.png"), opencv.load_image("F:\\3.png"),  opencv.load_image("F:\\4.png")}
+    local img1 = opencv.load_image("F:\\1.png")
+    local img2 = opencv.load_image("F:\\2.png")
+    local tmpl = opencv.load_image("F:\\3.jpg")
 
-    for i, v in ipairs(tmpl) do
-        print("use tmpl", i)
-        print("TM_CCORR_NORMED", opencv.match_template(img, v, 3))
-
-        -- print("TM_SQDIFF", opencv.match_template(img, v, 0, true))
-        -- print("TM_SQDIFF_NORMED", opencv.match_template(img, v, 1, true))
-        -- print("TM_CCORR", opencv.match_template(img, v, 2, true))
-        -- print("TM_CCORR_NORMED", opencv.match_template(img, v, 3, true))
-        -- print("TM_CCOEFF", opencv.match_template(img, v, 4, true))
-        -- print("TM_CCOEFF_NORMED", opencv.match_template(img, v, 5, true))
-    end
-
+    -- print("img1", opencv.match_template(img1, tmpl, 0, true))
+    print("img2", opencv.match_template(img2, tmpl, 0, true))
 end
 
 function tick()

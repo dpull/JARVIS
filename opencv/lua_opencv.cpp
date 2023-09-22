@@ -14,11 +14,9 @@ static void debug_img(const cv::String& win, const cv::Mat& img, cv::Point& min_
     cv::Mat resized_img;
     cv::resize(result_img, resized_img, cv::Size(result_img.cols / 2, result_img.rows / 2));
 
-    
     cv::namedWindow(win, cv::WINDOW_NORMAL);
     cv::imshow(win, resized_img);
     cv::waitKey();
-    cv::destroyWindow(win);
 }
 
 static int lua_load_image(lua_State* L)
@@ -72,17 +70,19 @@ static int lua_match_template(lua_State* L)
         max_loc.x = min_loc.x + tmpl->cols;
         max_loc.y = min_loc.y + tmpl->rows;
         break;
+    default:
+        ret_val = 0;
     }
 
-    if (show) { 
+    if (show) {
         debug_img("match_template", *img, min_loc, max_loc);
     }
 
     lua_pushnumber(L, ret_val);
-    lua_pushnumber(L, min_loc.x);
-    lua_pushnumber(L, min_loc.y);
-    lua_pushnumber(L, max_loc.x);
-    lua_pushnumber(L, max_loc.y);
+    lua_pushinteger(L, min_loc.x);
+    lua_pushinteger(L, min_loc.y);
+    lua_pushinteger(L, max_loc.x);
+    lua_pushinteger(L, max_loc.y);
     return 5;
 }
 
