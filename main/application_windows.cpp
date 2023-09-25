@@ -10,6 +10,8 @@ enum class event_id {
 
 bool application_windows::init(int argc, char** argv)
 {
+    SetProcessDPIAware();
+
     if (!RegisterHotKey(NULL, (int)event_id::hotKey_enable, MOD_CONTROL, VK_F12))
         return false;
 

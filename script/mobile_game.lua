@@ -1,9 +1,9 @@
 local emulator = import("script/emulator.lua")
      
-auto_cmd = auto_cmd or "a"
 disable = disable or false
 
-function init(arg1, ...)
+function init(instance_name, cmd, ...)
+    auto_cmd = cmd or "a"
     emulator.init()
 end
 

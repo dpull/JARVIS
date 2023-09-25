@@ -85,51 +85,46 @@ static int lua_match_template(lua_State* L)
     return 5;
 }
 
-static int lua_window2image(lua_State* L)
+static bool hwnd2mat(HWND hwnd, cv::Mat& image, DWORD& err_code)
 {
-    auto hwnd = static_cast<HWND>(lua_touserdata(L, 1));
-    auto save_file = lua_tostring(L, 2);
-
     RECT rect;
-    if (!GetClientRect(hwnd, &rect))
-        return luaL_argerror(L, 1, "parameter path invalid");
+    if (!GetWindowRect(hwnd, &rect)) {
+        err_code = GetLastError();
+        return false;
+    }
 
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
+    auto width = rect.right - rect.left;
+    auto height = rect.bottom - rect.top;
 
     auto hdc = GetDC(hwnd);
     auto mem_dc = CreateCompatibleDC(hdc);
     auto bitmap = CreateCompatibleBitmap(hdc, width, height);
     HGDIOBJ old_object = nullptr;
 
-    int result = 0;
+    bool result = false;
+    err_code = 0;
     do {
         old_object = SelectObject(mem_dc, bitmap);
         if (!old_object) {
-            result = luaL_error(L, "SelectObject failed");
+            err_code = GetLastError();
             break;
         }
 
         if (!BitBlt(mem_dc, 0, 0, width, height, hdc, 0, 0, SRCCOPY)) {
-            result = luaL_error(L, "BitBlt failed:%d", GetLastError());
+            err_code = GetLastError();
             break;
         }
 
-        auto image = lua_object<cv::Mat>::alloc(L, height, width, CV_8UC4);
-        if (GetBitmapBits(bitmap, width * height * 4, image->data) == 0) {
-            result = luaL_error(L, "GetBitmapBits failed:%d", GetLastError());
+        image.create(height, width, CV_8UC4);
+        if (GetBitmapBits(bitmap, width * height * 4, image.data) == 0) {
+            err_code = GetLastError();
             break;
         }
 
-        if (image->empty()) {
-            result = luaL_error(L, "cv image empty");
+        if (image.empty())
             break;
-        }
 
-        if (save_file)
-            cv::imwrite(save_file, *image);
-
-        result = 1;
+        result = true;
     } while (false);
 
     if (old_object)
@@ -142,6 +137,24 @@ static int lua_window2image(lua_State* L)
     return result;
 }
 
+static int lua_window2image(lua_State* L)
+{
+    auto hwnd = static_cast<HWND>(lua_touserdata(L, 1));
+    auto save_file = lua_tostring(L, 2);
+
+    cv::Mat image;
+    DWORD err_code;
+    if (!hwnd2mat(hwnd, image, err_code))
+        return luaL_error(L, "hwnd2mat failed:%u", err_code);
+
+    auto lua_image = lua_object<cv::Mat>::alloc(L);
+    cv::cvtColor(image, *lua_image, cv::COLOR_BGRA2BGR);
+    if (save_file)
+        cv::imwrite(save_file, *lua_image);
+
+    return 1;
+}
+
 int luaopen_opencv(lua_State* L)
 {
     luaL_checkversion(L);
@@ -149,7 +162,7 @@ int luaopen_opencv(lua_State* L)
         { "load_image", lua_load_image },
         { "match_template", lua_match_template },
         { "window2image", lua_window2image },
-        { NULL, NULL },
+        { nullptr, nullptr },
     };
     luaL_newlib(L, l);
 

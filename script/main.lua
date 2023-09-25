@@ -1,9 +1,9 @@
 instance = instance
 
-function init(arg1, ...)
-    local instance_name = arg1 or "script/mobile_game.lua"
+function init(instance_name, ...)
+    instance_name = instance_name or "script/mobile_game.lua"
     instance = import(instance_name)
-    instance.init(arg1, ...)
+    instance.init(instance_name, ...)
 end
 
 function tick(...)
