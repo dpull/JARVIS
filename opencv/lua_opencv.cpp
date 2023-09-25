@@ -1,23 +1,10 @@
 ﻿#include "lua_opencv.h"
-#include "lua_object.h"
+#include "lua_object.hpp"
 #include "opencv2/opencv.hpp"
 #include <Windows.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-static void debug_img(const cv::String& win, const cv::Mat& img, cv::Point& min_loc, cv::Point& max_loc)
-{
-    cv::Mat result_img(img);
-    cv::rectangle(result_img, min_loc, max_loc, cv::Scalar(0, 0, 255), 2);
-
-    cv::Mat resized_img;
-    cv::resize(result_img, resized_img, cv::Size(result_img.cols / 2, result_img.rows / 2));
-
-    cv::namedWindow(win, cv::WINDOW_NORMAL);
-    cv::imshow(win, resized_img);
-    cv::waitKey();
-}
 
 static int lua_load_image(lua_State* L)
 {
@@ -33,19 +20,50 @@ static int lua_load_image(lua_State* L)
     return 1;
 }
 
+static int lua_save_image(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+
+    auto path = lua_tostring(L, 2);
+    if (!path)
+        return luaL_argerror(L, 2, "parameter path invalid");
+
+    auto ret = cv::imwrite(path, *img);
+    lua_pushboolean(L, ret);
+    return 1;
+}
+
+static int lua_imencode(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+
+    auto ext = lua_tostring(L, 2);
+    if (!ext)
+        return luaL_argerror(L, 2, "parameter ext invalid");
+
+    std::vector<uchar> data;
+    if (!cv::imencode(ext, *img, data))
+        return 0;
+
+    lua_pushlstring(L, (char*)data.data(), data.size());
+    return 1;
+}
+
 static int lua_match_template(lua_State* L)
 {
     auto img = lua_object<cv::Mat>::toobj(L, 1);
     if (!img)
-        return luaL_argerror(L, 1, "parameter path invalid");
+        return luaL_argerror(L, 1, "parameter img invalid");
 
     auto tmpl = lua_object<cv::Mat>::toobj(L, 2);
     if (!tmpl)
-        return luaL_argerror(L, 1, "parameter path invalid");
+        return luaL_argerror(L, 1, "parameter tmpl invalid");
 
     auto method = static_cast<int>(lua_tointeger(L, 3));
-
-    auto show = lua_toboolean(L, 4);
 
     cv::Mat result;
     matchTemplate(*img, *tmpl, result, method);
@@ -74,15 +92,121 @@ static int lua_match_template(lua_State* L)
         ret_val = 0;
     }
 
-    if (show)
-        debug_img("match_template", *img, min_loc, max_loc);
-
     lua_pushnumber(L, ret_val);
     lua_pushinteger(L, min_loc.x);
     lua_pushinteger(L, min_loc.y);
     lua_pushinteger(L, max_loc.x);
     lua_pushinteger(L, max_loc.y);
     return 5;
+}
+
+static int lua_imshow(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+    auto win_name = lua_tostring(L, 2);
+    if (!win_name)
+        return luaL_argerror(L, 1, "parameter win_name invalid");
+
+    cv::String winname(win_name);
+
+    cv::namedWindow(win_name, cv::WINDOW_NORMAL);
+    cv::imshow(win_name, *img);
+    cv::waitKey();
+    return 0;
+}
+
+static int lua_rectangle(lua_State* L)
+{
+    auto top = lua_gettop(L);
+    if (top < 5)
+        return luaL_argerror(L, 1, "parameter invalid");
+
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+
+    cv::Point min_loc, max_loc;
+
+    min_loc.x = static_cast<int>(lua_tointeger(L, 2));
+    min_loc.y = static_cast<int>(lua_tointeger(L, 3));
+
+    max_loc.x = static_cast<int>(lua_tointeger(L, 4));
+    max_loc.y = static_cast<int>(lua_tointeger(L, 5));
+
+    cv::Scalar color(0, 0, 255);
+    if (top > 5) {
+        auto b = lua_tonumber(L, 6);
+        auto g = lua_tonumber(L, 7);
+        auto r = lua_tonumber(L, 8);
+        auto a = lua_tonumber(L, 9);
+        color = cv::Scalar(b, g, r, a);
+    }
+
+    auto copy_image = lua_object<cv::Mat>::alloc(L, *img);
+    cv::rectangle(*copy_image, min_loc, max_loc, color, 2);
+    return 1;
+}
+
+static int lua_image_size(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+    auto width = img->cols;
+    auto height = img->rows;
+
+    lua_pushinteger(L, width);
+    lua_pushinteger(L, height);
+    return 2;
+}
+
+static int lua_sub_image(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+
+    cv::Rect roi;
+    roi.x = static_cast<int>(lua_tointeger(L, 2));
+    roi.y = static_cast<int>(lua_tointeger(L, 3));
+    roi.width = static_cast<int>(lua_tointeger(L, 4));
+    roi.height = static_cast<int>(lua_tointeger(L, 5));
+    lua_object<cv::Mat>::alloc(L, (*img)(roi));
+    return 1;
+}
+
+static int lua_cvt_color(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+    auto code = static_cast<int>(lua_tointeger(L, 2));
+    auto cvt_image = lua_object<cv::Mat>::alloc(L);
+    cv::cvtColor(*img, *cvt_image, code);
+    return 1;
+}
+
+static int lua_equalizeHist(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+    auto cvt_image = lua_object<cv::Mat>::alloc(L);
+    cv::equalizeHist(*img, *cvt_image);
+    return 1;
+}
+
+static int lua_resize(lua_State* L)
+{
+    auto img = lua_object<cv::Mat>::toobj(L, 1);
+    if (!img)
+        return luaL_argerror(L, 1, "parameter img invalid");
+    cv::Size size(lua_tointeger(L, 2), lua_tointeger(L, 3));
+    auto cvt_image = lua_object<cv::Mat>::alloc(L);
+    cv::resize(*img, *cvt_image, size);
+    return 1;
 }
 
 static bool hwnd2mat(HWND hwnd, cv::Mat& image, DWORD& err_code)
@@ -142,15 +266,10 @@ static int lua_window2image(lua_State* L)
     auto hwnd = static_cast<HWND>(lua_touserdata(L, 1));
     auto save_file = lua_tostring(L, 2);
 
-    cv::Mat image;
-    DWORD err_code;
-    if (!hwnd2mat(hwnd, image, err_code))
-        return luaL_error(L, "hwnd2mat failed:%u", err_code);
-
     auto lua_image = lua_object<cv::Mat>::alloc(L);
-    cv::cvtColor(image, *lua_image, cv::COLOR_BGRA2BGR);
-    if (save_file)
-        cv::imwrite(save_file, *lua_image);
+    DWORD err_code;
+    if (!hwnd2mat(hwnd, *lua_image, err_code))
+        return luaL_error(L, "hwnd2mat failed:%u", err_code);
 
     return 1;
 }
@@ -160,12 +279,21 @@ int luaopen_opencv(lua_State* L)
     luaL_checkversion(L);
     luaL_Reg l[] = {
         { "load_image", lua_load_image },
+        { "save_image", lua_save_image },
+        { "imencode", lua_imencode },
         { "match_template", lua_match_template },
+        { "imshow", lua_imshow },
+        { "rectangle", lua_rectangle },
+        { "image_size", lua_image_size },
+        { "sub_image", lua_sub_image },
+        { "cvt_color", lua_cvt_color },
+        { "equalizeHist", lua_equalizeHist },
+        { "resize", lua_resize },
         { "window2image", lua_window2image },
         { nullptr, nullptr },
     };
-    luaL_newlib(L, l);
 
+    luaL_newlib(L, l);
     lua_object<cv::Mat>::newmetatable(L);
 
     return 1;

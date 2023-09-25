@@ -1,5 +1,6 @@
 package.path = package.path .. ";./?.lua;./script/?.lua"
 
+local system = require "system"
 local loadfile = loadfile
 local setmetatable = setmetatable
 local xpcall = xpcall
@@ -33,7 +34,7 @@ function _G.import(filename)
 
     local env = {};
     setmetatable(env, {__index = _G});
-    node = {env=env, fullpath=fullpath, filename=filename};
+    node = {env=env, fullpath=fullpath, filename=filename, last_write_time=system.get_file_last_write_time(fullpath)};
     _G.__IMPORT_FILES[fullpath] = node;
     try_load(node);
     return node.env;
@@ -41,7 +42,13 @@ end
 
 function _G.reload_all()
     for _, node in pairs(_G.__IMPORT_FILES) do
-        pcall(try_load, node)
+        local last_write_time = system.get_file_last_write_time(node.fullpath)
+        if last_write_time ~= node.last_write_time then
+            if pcall(try_load, node) then
+                node.last_write_time = last_write_time
+                print("reload", node.fullpath)
+            end
+        end
     end
 end
 

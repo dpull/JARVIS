@@ -1,4 +1,5 @@
-# JARVIS
+# J.A.R.V.I.S. 
+> Just A Rather Very Intelligent System
 
 ## Usage
 1. Install cmake. 

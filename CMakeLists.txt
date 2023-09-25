@@ -13,6 +13,8 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
 	add_definitions(-DDEBUG)
 endif()
 
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
@@ -24,6 +26,15 @@ add_subdirectory(thirdparty)
 set(OpenCV_STATIC ON)
 set(OpenCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build_opencv/install/")
 find_package(OpenCV REQUIRED)
+
+include_directories("include")
+
+if(MSVC)
+    add_compile_options(/wd4200)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
+endif(MSVC)
+ 
 
 add_subdirectory(main)
 add_subdirectory(windows)

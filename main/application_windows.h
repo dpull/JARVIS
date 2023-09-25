@@ -4,7 +4,7 @@
 
 class application_windows : public application {
 public:
-    bool init(int argc, char** argv) override;
+    bool init(int argc, wchar_t** argv) override;
     int run() override;
 
 private:

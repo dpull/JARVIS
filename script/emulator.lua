@@ -1,6 +1,11 @@
 local windows = require "windows"
+local system = require "system"
+local controller = import("script/coroutine/controller.lua")
 
+now = now or system.get_time_ms()
 frame = frame or 0
+fps = fps or 1
+start_time = start_time or now
 last_state = last_state or ""
 last_manually = last_manually or 0
 
@@ -21,7 +26,7 @@ local function get_tx_emulator_wnd(pid)
     end    
 end
 
-local function get_tx_emulator()
+function get_tx_emulator()
     local pids = {windows.find_process("AndroidEmulator")}
     for _, pid in ipairs(pids) do
         local wnd, subwnd = get_tx_emulator_wnd(pid)
@@ -32,23 +37,41 @@ local function get_tx_emulator()
     end
 end
 
+local function change_window_size(emulator)
+    local x, y, w, h = windows.get_window_rect(emulator)
+    local scaling = 1024 / w;
+    local newh =  math.floor(610 / scaling)
+    windows.set_window_pos(emulator, x, y, w, newh)
+end    
+
 function init()
     emulator, emulator_msg_proc = get_tx_emulator()
     assert(emulator)
-    windows.set_foreground_window(emulator)    
+    windows.set_foreground_window(emulator)   
+    
+    controller.fork("emulator", function ()
+        while true do
+            _on_frame_begin()
+            controller.sleep(70)
+            _on_frame_end()
+            _set_title()
+        end    
+    end, true)     
 end
 
-function on_frame_begin()
+function _on_frame_begin()
+    now = system.get_time_ms()
     frame = frame + 1
     cur_frame_input = next_frame_input or {}
     next_frame_input = {}
     cur_frame_unique = {}
 end
 
-function on_frame_end()
+function _on_frame_end()
     for _, msg in ipairs(cur_frame_input) do
         windows.post_message(emulator_msg_proc, table.unpack(msg))
     end
+    fps = math.ceil(frame / ((system.get_time_ms() - start_time) / 1000))
 end
 
 function press_keyboard(key)
@@ -69,6 +92,28 @@ function press_keyboard(key)
 
     lparam = lparam | (0x1 << 30)  | (0x1 << 31) 
     table.insert(next_frame_input, {0x0101, k, lparam})
+end
+
+local function remove_if(t, callback)
+    for i = #t, 1, -1 do
+        local v = t[i]
+        if callback(v) then
+            table.remove(t, i)
+        end
+    end
+end
+
+function clear_keyboard(key)
+    local k, scan = windows.kb_code(key)
+    if not k then
+        return
+    end
+    remove_if(cur_frame_input, function (v)
+        return v[1] == 0x0100 and v[2] == k
+    end)
+    remove_if(next_frame_input, function (v)
+        return v[1] == 0x0101 and v[2] == k
+    end)
 end
 
 function get_click_pos()
@@ -107,21 +152,17 @@ function enable()
     end
 
     if is_manually() then
-        last_manually = frame + 10
+        last_manually = frame + fps / 2
         return
     end
     if last_manually >= frame then
         return
     end
     return true
- end
-
-function attack()
-    press_keyboard('j')
 end
 
-function set_title(cmd)
-    local title = string.format("[%d]%s.%s", frame, cmd, last_state)
+function _set_title()
+    local title = string.format("[%d][%d]%s", fps, frame, last_state)
     windows.set_console_title(title)
 end
 

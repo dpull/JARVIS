@@ -17,3 +17,16 @@ set(LUA_INCLUDE_DIRS ${LUA_SRC_PATH} PARENT_SCOPE)
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	target_link_libraries(lua dl)
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux") 
+
+
+# curl
+set(BUILD_CURL_EXE OFF CACHE BOOL "")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
+set(BUILD_STATIC_LIBS ON CACHE BOOL "")
+set(CURL_STATIC_CRT ON CACHE BOOL "")
+set(HTTP_ONLY ON CACHE BOOL "")
+set(SHARE_LIB_OBJECT OFF CACHE BOOL "")
+add_subdirectory(curl)
+set_property(TARGET curlu curl_uninstall libcurl_static PROPERTY FOLDER "thirdparty")
+set(CURL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/curl/include PARENT_SCOPE)
+set(CURL_LIBRARIES libcurl_static PARENT_SCOPE)

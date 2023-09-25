@@ -1,66 +1,65 @@
 local opencv = require "opencv"
-
 local emulator = import("script/emulator.lua")
-local img_can_task = opencv.load_image("resource/cantask.jpg")
+local controller = import("script/coroutine/controller.lua")
+local game_state = import("script/game_state.lua")
+local log_tree = require "tree"
 
-local next_step = {
-    {1765, 836},
-    {1440, 719},
-    {1433, 714},
-    {965, 1002},
-    {1757, 835},
-    {1447, 714},
-}
+function init()
+    game_state.set_task_mode()
 
-local function do_next_step()
-    next_step_idx = next_step_idx or 1
-    if next_step_idx > #next_step then
-        next_step_idx = 1
-    end
-
-    local p = next_step[next_step_idx]
-    next_step_idx = next_step_idx + 1
-    emulator.click_mouse(table.unpack(p))    
+    controller.fork("task", function ()
+        while true do
+            _tick()
+            controller.sleep(1000)
+        end
+    end)   
 end
 
-local function match_template(img, template_img, expect_x, expect_y)
-    local _, minx, miny, maxx, maxy = opencv.match_template(img, template_img, 0)
-    return minx <= expect_x and maxx >= expect_x and miny <= expect_y and maxy >= expect_y
-end
-
-local function check_can_accept()
-    local img = opencv.window2image(emulator.emulator)
-    if not img then
-        print("opencv.window2image failed")
-        return
-    end
-
-    local x = 1000
-    local y = 1550
-    if not match_template(img, img_can_task, x, y) then
-        return
-    end  
-    
-    print("can accept task")
-    emulator.click_mouse(356, 545)  
-    return true
-end
-
-
-function exec()
+function _tick()
     if not emulator.enable() then
-        emulator.set_state("disable")
+        emulator.set_state("task.disable")
         return
     end
-    emulator.set_state("click")
 
-    local frame = emulator.frame
-    if frame % 8 ~= 0 then
+    local ok, st, dt = game_state.get_cfg_state()
+    if not ok then
+        print("get_cfg_state failed")
+        emulator.set_state("task.failed.ok")
+        return
+    end 
+    if not st then
+        print("get_cfg_state failed")
+        emulator.set_state("task.failed.st")
+        return
+    end    
+
+    emulator.set_state("task")
+    log_tree("st+dt" .. os.time(), {st, dt})
+    -- log_tree("st" .. os.time(), st)
+
+    if game_state.check_and_click(st, dt, "check_task_next_state") then
+        return
+    end 
+ 
+    if game_state.check_and_click(st, dt, "check_confirm_state") then
+        return
+    end
+
+    if game_state.check_and_click(st, dt, "check_accept_state") then
+        return
+    end
+
+    if game_state.check_and_click(st, dt, "check_reward_state") then
+        return
+    end
+
+    if game_state.check_and_click(st, dt, "check_finish_state") then
         return
     end 
     
-    if check_can_accept() then
-        return
-    end
-    do_next_step()
+    if st.check_start_battle_state  or st.check_new_task_game_state then
+        if game_state.check_and_click(st, dt, "check_new_task_state") then
+            return
+        end 
+    end 
 end

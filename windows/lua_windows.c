@@ -1,4 +1,5 @@
 ﻿#include "lua_windows.h"
+#include "unicode.h"
 #include <Windows.h>
 #include <psapi.h>
 #include <shlwapi.h>
@@ -9,9 +10,13 @@
 
 static int lua_find_process(lua_State* L)
 {
-    const char* path = lua_tostring(L, 1);
-    DWORD pids[4096], needed, count, result;
-    char mod_name[MAX_PATH];
+    DWORD pids[2048], needed, count, result;
+    wchar_t exe[MAX_PATH];
+    wchar_t mod_name[MAX_PATH];
+
+    const char* exe_utf8 = lua_tostring(L, 1);
+    if (utf8_utf16(exe_utf8, exe, _countof(exe)) <= 0)
+        return luaL_argerror(L, 1, "parameter exe invalid");
 
     if (!EnumProcesses(pids, sizeof(pids), &needed))
         return 0;
@@ -24,8 +29,8 @@ static int lua_find_process(lua_State* L)
         if (!process)
             continue;
 
-        if (GetModuleFileNameExA(process, NULL, mod_name, sizeof(mod_name)) > 0) {
-            if (StrStrIA(mod_name, path)) {
+        if (GetModuleFileNameExW(process, NULL, mod_name, _countof(mod_name)) > 0) {
+            if (StrStrIW(mod_name, exe)) {
                 lua_pushinteger(L, pids[i]);
                 result++;
             }
@@ -88,19 +93,13 @@ static int lua_get_child_window(lua_State* L)
 
 static void lua_pushlwstring(lua_State* L, wchar_t* wstr, int len)
 {
-    int size = WideCharToMultiByte(CP_UTF8, 0, wstr, len, NULL, 0, NULL, FALSE);
-    if (size == 0) {
+    int utf8str_size = len * 4;
+    char* utf8str = (char*)malloc(utf8str_size);
+    int utf8str_len = utf16_utf8(wstr, utf8str, utf8str_size);
+    if (utf8str_len > 0)
+        lua_pushlstring(L, utf8str, utf8str_len);
+    else
         lua_pushstring(L, "");
-        return;
-    }
-
-    char* utf8str = (char*)malloc(size);
-    int cnt = WideCharToMultiByte(CP_UTF8, 0, wstr, len, utf8str, size, NULL, NULL);
-    if (cnt > 0) {
-        lua_pushlstring(L, utf8str, cnt);
-    } else {
-        lua_pushstring(L, "");
-    }
     free(utf8str);
 }
 
@@ -214,6 +213,20 @@ static int lua_get_window_rect(lua_State* L)
     return 4;
 }
 
+static int lua_set_window_pos(lua_State* L)
+{
+    HWND hwnd = lua_touserdata(L, 1);
+    if (!hwnd)
+        return 0;
+    int x = (int)lua_tointeger(L, 2);
+    int y = (int)lua_tointeger(L, 3);
+    int cx = (int)lua_tointeger(L, 4);
+    int cy = (int)lua_tointeger(L, 5);
+    BOOL ret = SetWindowPos(hwnd, NULL, x, y, cx, cy, SWP_NOZORDER);
+    lua_pushboolean(L, ret);
+    return 1;
+}
+
 static int lua_get_cursor_pos(lua_State* L)
 {
     POINT point;
@@ -304,6 +317,7 @@ int luaopen_windows(lua_State* L)
         { "get_foreground_window", lua_get_foreground_window },
         { "send_input", lua_send_input },
         { "get_window_rect", lua_get_window_rect },
+        { "set_window_pos", lua_set_window_pos },
         { "get_cursor_pos", lua_get_cursor_pos },
         { "set_cursor_pos", lua_set_cursor_pos },
         { "get_async_key_state", lua_get_async_key_state },

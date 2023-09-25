@@ -1,10 +1,6 @@
 ﻿#pragma once
 
-extern "C" {
-#include "lauxlib.h"
-#include "lua.h"
-#include "lualib.h"
-}
+#include "lua.hpp"
 
 template <typename T> struct lua_object {
     static bool newmetatable(lua_State* L, luaL_Reg* l = nullptr)
