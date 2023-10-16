@@ -13,11 +13,11 @@ local function get_tx_emulator_wnd(pid)
     local wnds = {windows.find_window(pid)}
     for _, wnd in ipairs(wnds) do
         local title = windows.get_window_text(wnd)
-        if string.find(title, "腾讯手游助手") then
+        if string.find(title, "腾讯手游助手", 1, true) then
             local child = { windows.get_child_window(wnd)}
             for _, subwnd in pairs(child) do
                 title = windows.get_window_text(subwnd)
-                if string.find(title, "EngineRenderWindow") then
+                if string.find(title, "EngineRenderWindow", 1, true) then
                     return wnd, subwnd
                 end
             end

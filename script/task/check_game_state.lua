@@ -60,7 +60,7 @@ local function slipt(str, sep)
     local tb = {}
     local offset = 1
     while true do
-        local pos = str:find(sep, offset)
+        local pos = str:find(sep, offset, true)
         if not pos then
             break
         end
@@ -83,7 +83,7 @@ local function get_rect(line, text)
     local word_start;
     local word_end;
     for _, word in pairs(line) do
-        if text:find(word.text) then
+        if text:find(word.text, 1, true) then
             if not word_start then
                 word_start = word
             end
@@ -135,7 +135,7 @@ local function bench_ocr(config, img_raw, scaling, state, detail, debug)
         end
 
         for k, conf in pairs(config) do
-            if text:find(conf.text) then
+            if text:find(conf.text, 1, true) then
                 local match, minx, miny, maxx, maxy = try_get_rect(line, conf, w, h)
                 if match then
                     state[k] = true
