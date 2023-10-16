@@ -11,7 +11,7 @@ static inline void lua_writestring_utf8(const char* s, size_t l)
     try {
         auto str = utf_cvt().from_bytes(s, s + l);
         WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), str.c_str(), (DWORD)str.size(), nullptr, nullptr);
-    } catch (...){
+    } catch (...) {
         printf(s);
     }
 }

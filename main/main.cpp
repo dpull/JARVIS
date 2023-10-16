@@ -5,7 +5,7 @@
 std::unique_ptr<application> g_application = nullptr;
 static bool SetConsoleInfo();
 
-int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) 
+int wmain(int argc, wchar_t* argv[], wchar_t* envp[])
 {
     g_application.reset(new application_windows());
     if (!g_application->init(argc, argv)) {

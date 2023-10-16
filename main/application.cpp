@@ -28,7 +28,6 @@ bool application::init(int argc, wchar_t** argv)
     return true;
 }
 
-
 int application::run()
 {
     while (!_exit_flag) {

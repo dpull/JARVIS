@@ -35,7 +35,7 @@ static int lua_get_directory_files(lua_State* L)
 {
     auto path = lua_tostring(L, 1);
     int array_cnt = 0;
-    lua_newtable(L); 
+    lua_newtable(L);
     traverse_directory(L, array_cnt, std::filesystem::u8path(path));
     return 1;
 }

@@ -70,7 +70,7 @@ static int lua_find_window(lua_State* L)
     return param.count;
 }
 
-BOOL CALLBACK enum_child_proc(HWND hwnd, LPARAM lparam)
+static BOOL CALLBACK enum_child_proc(HWND hwnd, LPARAM lparam)
 {
     struct enum_wnd_param* param = (struct enum_wnd_param*)lparam;
     lua_pushlightuserdata(param->L, hwnd);

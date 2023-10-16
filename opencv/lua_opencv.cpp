@@ -1,5 +1,6 @@
 ﻿#include "lua_opencv.h"
 #include "lua_object.hpp"
+#include "opencv2/dnn.hpp"
 #include "opencv2/opencv.hpp"
 #include <Windows.h>
 #include <assert.h>
@@ -61,7 +62,7 @@ static int lua_match_template(lua_State* L)
 
     auto tmpl = lua_object<cv::Mat>::toobj(L, 2);
     if (!tmpl)
-        return luaL_argerror(L, 1, "parameter tmpl invalid");
+        return luaL_argerror(L, 2, "parameter tmpl invalid");
 
     auto method = static_cast<int>(lua_tointeger(L, 3));
 
@@ -107,7 +108,7 @@ static int lua_imshow(lua_State* L)
         return luaL_argerror(L, 1, "parameter img invalid");
     auto win_name = lua_tostring(L, 2);
     if (!win_name)
-        return luaL_argerror(L, 1, "parameter win_name invalid");
+        return luaL_argerror(L, 2, "parameter win_name invalid");
 
     cv::String winname(win_name);
 
@@ -121,7 +122,7 @@ static int lua_rectangle(lua_State* L)
 {
     auto top = lua_gettop(L);
     if (top < 5)
-        return luaL_argerror(L, 1, "parameter invalid");
+        return luaL_error(L, "parameter count invalid");
 
     auto img = lua_object<cv::Mat>::toobj(L, 1);
     if (!img)
@@ -203,7 +204,7 @@ static int lua_resize(lua_State* L)
     auto img = lua_object<cv::Mat>::toobj(L, 1);
     if (!img)
         return luaL_argerror(L, 1, "parameter img invalid");
-    cv::Size size(lua_tointeger(L, 2), lua_tointeger(L, 3));
+    cv::Size size(static_cast<int>(lua_tointeger(L, 2)), static_cast<int>(lua_tointeger(L, 3)));
     auto cvt_image = lua_object<cv::Mat>::alloc(L);
     cv::resize(*img, *cvt_image, size);
     return 1;
@@ -274,6 +275,23 @@ static int lua_window2image(lua_State* L)
     return 1;
 }
 
+static int lua_read_dnn_net(lua_State* L)
+{
+    auto type = lua_tostring(L, 1);
+    auto file = lua_tostring(L, 2);
+
+    auto net = lua_object<cv::dnn::Net>::alloc(L);
+    if (strcmp(type, "ONNX") == 0)
+        *net = cv::dnn::readNetFromONNX(file);
+    else if (strcmp(type, "Tensorflow") == 0)
+        *net = cv::dnn::readNetFromTensorflow(file);
+    else if (strcmp(type, "Torch") == 0)
+        *net = cv::dnn::readNetFromTorch(file);
+    else
+        return luaL_error(L, "unsupported type:%s", type);
+    return 1;
+}
+
 int luaopen_opencv(lua_State* L)
 {
     luaL_checkversion(L);
@@ -290,6 +308,7 @@ int luaopen_opencv(lua_State* L)
         { "equalizeHist", lua_equalizeHist },
         { "resize", lua_resize },
         { "window2image", lua_window2image },
+        { "read_dnn_net", lua_read_dnn_net },
         { nullptr, nullptr },
     };
 
