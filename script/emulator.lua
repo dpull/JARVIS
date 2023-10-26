@@ -37,6 +37,36 @@ function get_tx_emulator()
     end
 end
 
+local function get_mumu_emulator_wnd(pid)
+    print("get_mumu_emulator_wnd", pid)
+    local wnds = {windows.find_window(pid)}
+    for _, wnd in ipairs(wnds) do
+        local title = windows.get_window_text(wnd)
+        print("get_mumu_emulator_wnd", pid, title)
+        if string.find(title, "MuMu模拟器", 1, true) then
+            local child = { windows.get_child_window(wnd)}
+            for _, subwnd in pairs(child) do
+                title = windows.get_window_text(subwnd)
+                if string.find(title, "MuMuPlayer", 1, true) then
+                    return wnd, subwnd
+                end
+            end
+            return nil
+        end
+    end    
+end
+
+function get_mumu_emulator()
+    local pids = {windows.find_process("MuMuPlayer")}
+    for _, pid in ipairs(pids) do
+        local wnd, subwnd = get_mumu_emulator_wnd(pid)
+        if wnd then
+            print("find mumu emulator", pid)
+            return wnd, subwnd
+        end
+    end
+end
+
 local function change_window_size(emulator)
     local x, y, w, h = windows.get_window_rect(emulator)
     local scaling = 1024 / w;
@@ -45,7 +75,7 @@ local function change_window_size(emulator)
 end    
 
 function init()
-    emulator, emulator_msg_proc = get_tx_emulator()
+    emulator, emulator_msg_proc = get_mumu_emulator()
     assert(emulator)
     windows.set_foreground_window(emulator)   
     

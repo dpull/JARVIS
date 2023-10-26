@@ -6,7 +6,7 @@ local log_tree = require "tree"
 local json = require "json"
 local emulator = import("script/emulator.lua")
 
-local emulator_wnd = emulator.get_tx_emulator()
+local emulator_wnd = emulator.get_mumu_emulator()
 assert(emulator_wnd)
 
 webclient = webclient or webclientlib.create()
