@@ -50,7 +50,7 @@ function _tick()
     requests[finish_key] = nil    
 end
 
-function request(url, get, post, response)
+function request(url, get, post)
     if get then
         local i = 0
         for k, v in pairs(get) do

@@ -325,8 +325,11 @@ int luaopen_windows(lua_State* L)
         { "set_console_title", lua_set_console_title },
         { "post_message", lua_post_message },
         { "kb_code", lua_kb_code },
+        { "create_process", lua_create_process },
         { NULL, NULL },
     };
+
+    lua_create_process_meta_init(L);
     luaL_newlib(L, l);
     return 1;
 }
