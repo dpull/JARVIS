@@ -12,18 +12,18 @@ local function trim(s)
 end
 
 function adb(...)
-     local args = table.concat({...}, " ")
-     local command = string.format("%s %s", adb_path, args);
- 
-     local handle = io.popen(command)
-     if not handle then
-         return nil, "failed to execute ADB command."
-     end
+    local args = table.concat({...}, " ")
+    local command = string.format("%s %s", adb_path, args)
 
-     local result = handle:read("*a")
-     handle:close()
+    local handle = io.popen(command)
+    if not handle then
+        return nil, "failed to execute ADB command."
+    end
 
-     return trim(result)
+    local result = handle:read("*a")
+    handle:close()
+
+    return trim(result)
 end
 
 function connect(ip, port)

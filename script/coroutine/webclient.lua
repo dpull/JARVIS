@@ -6,16 +6,16 @@ requests = requests or {}
 function init()
     assert(not webclient)
     webclient = webclientlib.create()
-    
-    controller.fork("webclient", function ()
+
+    controller.fork("webclient", function()
         while true do
             _tick()
             controller.sleep(10)
-        end    
-    end, true) 
+        end
+    end, true)
 end
 
-local function resopnd(request, result)   
+local function resopnd(request, result)
     if not request.co_name then
         return
     end
@@ -25,8 +25,8 @@ local function resopnd(request, result)
         return
     end
 
-    local content, errmsg = webclient:get_respond(request.req) 
-    local info = webclient:get_info(request.req) 
+    local content, errmsg = webclient:get_respond(request.req)
+    local info = webclient:get_info(request.req)
 
     if result == 0 then
         coroutine.resume(co, true, content, info)
@@ -41,13 +41,13 @@ function _tick()
         return
     end
 
-    local request = requests[finish_key];
+    local request = requests[finish_key]
     assert(request)
 
     pcall(resopnd, request, result)
 
     webclient:remove_request(request.req)
-    requests[finish_key] = nil    
+    requests[finish_key] = nil
 end
 
 function request(url, get, post)
@@ -69,14 +69,14 @@ function request(url, get, post)
 
     if post and type(post) == "table" then
         local data = {}
-        for k,v in pairs(post) do
+        for k, v in pairs(post) do
             k = webclient:url_encoding(k)
             v = webclient:url_encoding(v)
 
             table.insert(data, string.format("%s=%s", k, v))
-        end   
-        post = table.concat(data , "&")
-    end   
+        end
+        post = table.concat(data, "&")
+    end
 
     local req, key = webclient:request(url, post)
     if not req then
@@ -89,9 +89,9 @@ function request(url, get, post)
     end
 
     requests[key] = {
-        url = url, 
+        url = url,
         req = req,
-        co_name = controller.get_name(),
+        co_name = controller.get_name()
     }
     return coroutine.yield()
 end

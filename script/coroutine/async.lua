@@ -3,21 +3,23 @@ local asynlib = require "async_task"
 
 local controller = import("script/coroutine/controller.lua")
 
-requests = requests or setmetatable({}, {__mode = "v"}) 
+requests = requests or setmetatable({}, {
+    __mode = "v"
+})
 
 function init()
     assert(not async_task)
-    async_task = asynlib.create() 
-    controller.fork("async_task", function ()
+    async_task = asynlib.create()
+    controller.fork("async_task", function()
         while true do
             _tick()
             controller.sleep(0)
-        end    
-    end, true) 
+        end
+    end, true)
 end
 
 local function resopnd(token, result, arg)
-    local co = requests[token]   
+    local co = requests[token]
     if not co then
         return
     end
@@ -49,7 +51,7 @@ function call(file, func, ...)
     local token = async_task:push("script/coroutine/async.lua", "_async_task", arg)
 
     requests[token] = coroutine.running()
-    return coroutine.yield()    
+    return coroutine.yield()
 end
 
 local function do_task(file, func, ...)
