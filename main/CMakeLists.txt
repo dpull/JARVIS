@@ -18,8 +18,12 @@ include_directories(${LUA_INCLUDE_DIRS})
 include_directories(${CURL_INCLUDE_DIRS})
 
 add_executable(${APP_NAME} ${SOURCE_FILES} ${INCLUDE_FILES} ${LUA_SOURCE_FILES})
-target_link_libraries(${APP_NAME} ${OpenCV_LIBRARIES} ${CURL_LIBRARIES})
-target_link_libraries(${APP_NAME} lua windows opencv)
+target_link_libraries(${APP_NAME} ${CURL_LIBRARIES})
+target_link_libraries(${APP_NAME} lua windows)
+
+if(OpenCV_FOUND)
+    target_link_libraries(${APP_NAME} ${OpenCV_LIBRARIES} opencv)
+endif()
 
 if(APPLE)
     target_link_libraries(${APP_NAME} "-framework CoreFoundation")

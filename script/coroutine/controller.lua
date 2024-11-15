@@ -4,14 +4,18 @@ local log_tree = require "tree"
 system_co = system_co or {}
 user_co = user_co or {}
 
-sleep_co = sleep_co or setmetatable({}, {__mode = "k"}) 
-co2name = co2name or setmetatable({}, {__mode = "k"})
+sleep_co = sleep_co or setmetatable({}, {
+    __mode = "k"
+})
+co2name = co2name or setmetatable({}, {
+    __mode = "k"
+})
 
 function create(name, fn, is_system)
     assert(get_co(name) == nil)
 
     local tb = is_system and system_co or user_co
-    local co = coroutine.create(function ()
+    local co = coroutine.create(function()
         local ok, msg = xpcall(fn, debug.traceback)
         if not ok then
             print(name, msg)

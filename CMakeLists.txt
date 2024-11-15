@@ -25,7 +25,7 @@ add_subdirectory(thirdparty)
 # opencv
 set(OpenCV_STATIC ON)
 set(OpenCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build_opencv/install/")
-find_package(OpenCV REQUIRED)
+find_package(OpenCV QUIET)
 
 include_directories("include")
 
@@ -34,11 +34,14 @@ if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 endif(MSVC)
- 
+
+if(OpenCV_FOUND)
+    add_definitions(-DENABLE_OPENCV=1)
+    add_subdirectory(opencv)
+endif()
 
 add_subdirectory(main)
 add_subdirectory(windows)
-add_subdirectory(opencv)
 
 message(STATUS *******************************************************)
 message(STATUS CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
