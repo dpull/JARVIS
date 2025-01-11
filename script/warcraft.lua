@@ -14,6 +14,13 @@ function init(instance_name, cmd, ...)
             controller.sleep(1000)
         end
     end)
+
+    controller.fork("stop", function()
+        while true do
+            controller.sleep(1000*3600*2)
+            stop()
+        end
+    end)
 end
 
 function on_event(key, ...)
@@ -33,4 +40,11 @@ function check()
 
     local pid = emulator.get_pid(app_name) or ""
     notify.text("not running, restart pid=" .. pid)
+end
+
+function stop()
+    local pid = emulator.stop(app_name)
+    if pid then
+        notify.text("stop pid=" .. pid)
+    end
 end

@@ -15,3 +15,7 @@ end
 function start(app_activity)
     adb.shell("am start -n", app_activity)
 end
+
+function stop(app_name)
+    adb.shell("am force-stop", app_name)
+end
