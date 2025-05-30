@@ -17,7 +17,7 @@ function init(instance_name, cmd, ...)
 
     controller.fork("stop", function()
         while true do
-            controller.sleep(1000*3600*2)
+            controller.sleep(1000*3600*1)
             stop()
         end
     end)

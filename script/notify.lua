@@ -24,6 +24,6 @@ end
 function text(msg)
     local json_msg = string.format('{"msgtype": "text", "text": {"content": "%s"}}', msg)
     if notify(json_msg) then
-        print("text", msg)
+        print(os.date("%Y-%m-%d %H:%M:%S"), msg)
     end
 end
